@@ -140,31 +140,8 @@ else ifeq ($(platform), gcw0)
 else
   OUTNAME := dosbox_pure_libretro.so
   CXX     ?= g++
-  LDFLAGS := -Wl,--gc-sections -fno-ident
+  LDFLAGS ?= -Wl,--gc-sections -fno-ident
   COMMONFLAGS += -pthread
-  # ARM optimizations
-  PROCCPU := $(shell cat /proc/cpuinfo))
-  ifneq ($(and $(filter ARMv7,$(PROCCPU)),$(filter neon,$(PROCCPU))),)
-    CPUFLAGS := -mcpu=cortex-a72 -mfpu=neon-fp-armv8 -mfloat-abi=hard -ffast-math
-  else
-    ifeq ($(CORTEX_A7), 1)
-      CPUFLAGS += -marm -mcpu=cortex-a7
-      ifeq ($(ARM_NEON), 1)
-        CPUFLAGS += -mfpu=neon-vfpv4
-      endif
-    endif
-    ifeq ($(ARM_HARDFLOAT), 1)
-      CPUFLAGS += -mfloat-abi=hard
-     endif
-  endif
-  CXX_VER := $(shell $(CXX) -v 2>&1)
-  ifneq ($(and $(findstring arm,$(CXX_VER)),$(findstring version 10,$(CXX_VER))),)
-    # Switch to gcc 9 to avoid buggy assembly genetation of gcc 10
-    # On armv7l, gcc 10.2 with -O2 on the file core_dynrec.cpp generates assembly that wrongfully passes NULL to the runcode function
-    # resulting in a segfault crash. It can be observed by writing block->cache.start to stdout twice where it is NULL at first
-    # and then the actual value thereafter. This affects upstream SVN DOSBox as well as this core.
-    CXX := g++-9
-  endif
 endif
 
 ifeq ($(BUILD),DEBUG)
@@ -184,8 +161,8 @@ else ifeq ($(BUILD),ASAN)
 else
   BUILD    := RELEASE
   BUILDDIR := release
-  CFLAGS   := -DNDEBUG -O2 -fno-ident
-  LDFLAGS  += -O2
+  CFLAGS   ?= -DNDEBUG -O2 -fno-ident
+  LDFLAGS  ?= -O2
 endif
 
 CFLAGS  += $(CPUFLAGS) -std=gnu++11 -fpic -fomit-frame-pointer -fno-exceptions -fno-non-call-exceptions -Wno-address-of-packed-member -Wno-format -Wno-switch
